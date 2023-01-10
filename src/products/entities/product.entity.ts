@@ -10,7 +10,7 @@ export class Product {
   title: string;
 
   /* number no es soportado en postgres */
-  @Column('numeric', { default: 0 })
+  @Column('float', { default: 0 })
   price: number;
 
   @Column({
