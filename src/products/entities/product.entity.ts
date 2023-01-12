@@ -54,6 +54,8 @@ export class Product {
   /* images */
   @OneToMany(() => ProductImage, (productImage) => productImage.product, {
     cascade: true,
+    /* esto ayuda a cargar los datos como query de otra tabla */
+    eager: true,
   })
   images?: ProductImage[];
 

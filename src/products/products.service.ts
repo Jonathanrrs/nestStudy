@@ -46,9 +46,15 @@ export class ProductsService {
     const products = await this.productRepository.find({
       take: limit,
       skip: offset,
-      /* relaciones */
+      /* relaciones de otra tabla */
+      relations: {
+        images: true,
+      },
     });
-    return products;
+    return products.map((product) => ({
+      ...product,
+      images: product.images.map((img) => img.url),
+    }));
   }
 
   async findOne(term: string) {
@@ -57,17 +63,31 @@ export class ProductsService {
       product = await this.productRepository.findOneBy({ id: term });
     } else {
       // crear nuestra query
-      const queryBuilder = this.productRepository.createQueryBuilder();
+      const queryBuilder = this.productRepository.createQueryBuilder('prod');
       product = await queryBuilder
         .where(`UPPER(title) =:title or slug =:slug`, {
           title: term.toUpperCase(),
           slug: term.toLowerCase(),
         })
+        .leftJoinAndSelect(
+          'prod.images',
+          'prodImages',
+        ) /* son alias de las tablas, son necesarias */
         .getOne();
     }
     if (!product)
       throw new NotFoundException(`Product with term ${term} not found`);
     return product;
+  }
+
+  /* esto para no modiciar el findOne porque el delete ya no funciona por el retorno de product */
+  async findOnePlain(term: string) {
+    const { images = [], ...rest } = await this.findOne(term);
+
+    return {
+      ...rest,
+      images: images.map((img) => img.url),
+    };
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
