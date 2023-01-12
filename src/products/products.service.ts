@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,6 +21,9 @@ export class ProductsService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
+
+    /* para saber cual es la bd usada, la conexion, misma conf que los repositorios */
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -91,18 +94,47 @@ export class ProductsService {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
+    const { images, ...toUpdate } = updateProductDto;
+
     const product = await this.productRepository.preload({
       id,
-      ...updateProductDto,
-      images: [],
+      ...toUpdate,
     });
     if (!product)
       throw new NotFoundException(`Product with id ${id} not found`);
 
+    /* create query runner */
+    /* para manejar transacciones con relaciones y si sale algo mal se haga un rollback */
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      await this.productRepository.save(product);
-      return product;
+      if (images) {
+        await queryRunner.manager.delete(ProductImage, {
+          /* esto es de tener cuidado, para no borrar todo */
+          product: { id },
+        });
+
+        product.images = images.map((image) =>
+          this.productImageRepository.create({ url: image }),
+        );
+      } else {
+      }
+      /* esto para intentar grabar pero puede revertirse, no impacta la bd todavia */
+      await queryRunner.manager.save(product);
+
+      // await this.productRepository.save(product); /* ya no se ocupa */
+
+      /* aplicar cambios */
+      await queryRunner.commitTransaction();
+      /* dejar de usar el queryrunner */
+      await queryRunner.release();
+      return this.findOnePlain(id);
     } catch (error) {
+      /* por si algo sale mal */
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
       this.handleDBExceptions(error);
     }
   }
