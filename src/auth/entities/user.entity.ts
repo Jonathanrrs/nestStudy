@@ -12,7 +12,9 @@ export class User {
   @Column('text')
   fullName: string;
   /* en postgres se usa bool */
-  @Column('bool')
+  @Column('bool', {
+    default: true,
+  })
   isActive: boolean;
   @Column('text', {
     array: true,
