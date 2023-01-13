@@ -1,3 +1,4 @@
+import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -6,6 +7,7 @@ import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
 import { FilesModule } from './files/files.module';
 import { EnvConfiguration } from './config/.env.config';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
@@ -22,6 +24,10 @@ import { EnvConfiguration } from './config/.env.config';
       autoLoadEntities: true,
       /* este no es para prod usualmente */
       synchronize: true,
+    }),
+    /* se elimino lo que habia en public porque ahi no lo ocupamos */
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
     }),
     ProductsModule,
     CommonModule,
