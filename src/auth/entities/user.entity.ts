@@ -7,7 +7,8 @@ export class User {
 
   @Column('text', { unique: true })
   email: string;
-  @Column('text')
+
+  @Column('text', { select: false })
   password: string;
   @Column('text')
   fullName: string;
