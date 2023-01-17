@@ -1,7 +1,8 @@
 import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { GetUser } from './decorators/get-user.decorator';
+import { RawHeaders, GetUser } from './decorators';
+
 import { CreateUserDto, LoginUserDto } from './dto';
 import { User } from './entities';
 
@@ -22,9 +23,11 @@ export class AuthController {
   @Get('private')
   @UseGuards(AuthGuard()) /* para ruta privada se ocupa el token */
   testingPrivateRoute(
-    /* @Req() request: Express.Request */ @GetUser(['email']) user: User,
+    /* @Req() request: Express.Request */ @GetUser() user: User,
     /* esto es un decorador de parametro, se realizo para extraer la info del usuario de esta manera en lugar de extrearlo de la propia request */
+    @GetUser('email') userEmail: string,
+    @RawHeaders() rawHeaders: string[],
   ) {
-    return user;
+    return { user, userEmail, rawHeaders };
   }
 }
