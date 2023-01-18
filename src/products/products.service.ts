@@ -10,8 +10,9 @@ import {
   NotFoundException,
 } from '@nestjs/common/exceptions';
 import { Logger } from '@nestjs/common/services';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { validate as isUUID } from 'uuid';
+import { User } from '../auth/entities';
 
 @Injectable()
 export class ProductsService {
@@ -26,7 +27,7 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
     try {
       const { images = [], ...productDetails } = createProductDto;
       /* crea la instancia del producto con sus propiedades */
@@ -35,6 +36,7 @@ export class ProductsService {
         images: images.map((img) =>
           this.productImageRepository.create({ url: img }),
         ),
+        user,
       });
       /* guardar en db */
       await this.productRepository.save(product);
@@ -93,7 +95,7 @@ export class ProductsService {
     };
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto, user: User) {
     const { images, ...toUpdate } = updateProductDto;
 
     const product = await this.productRepository.preload({
@@ -120,6 +122,7 @@ export class ProductsService {
           this.productImageRepository.create({ url: image }),
         );
       }
+      product.user = user;
       /* esto para intentar grabar pero puede revertirse, no impacta la bd todavia */
       await queryRunner.manager.save(product);
 
