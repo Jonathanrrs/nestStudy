@@ -6,7 +6,9 @@ import {
   BeforeInsert,
   BeforeUpdate,
   OneToMany,
+  ManyToOne,
 } from 'typeorm';
+import { User } from 'src/auth/entities';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -59,6 +61,10 @@ export class Product {
     eager: true,
   })
   images?: ProductImage[];
+
+  /* eager para que cargue automaticamente la relacion con user y se vea ese campo en la consulta */
+  @ManyToOne(() => User, (user) => user.product, { eager: true })
+  user: User;
 
   @BeforeInsert()
   checkSlugInsert() {
