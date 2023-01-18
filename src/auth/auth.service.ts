@@ -70,4 +70,16 @@ export class AuthService {
 
     throw new InternalServerErrorException('Please check logs');
   }
+
+  async checkAuthStatus(user: User) {
+    const userDB = await this.userRepository.findOne({
+      where: { id: user.id },
+      select: { email: true, password: true, id: true, fullName: true },
+    });
+
+    return {
+      ...userDB,
+      token: this.getJwtToken({ id: userDB.id }),
+    };
+  }
 }
